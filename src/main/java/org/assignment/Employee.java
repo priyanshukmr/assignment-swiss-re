@@ -11,6 +11,9 @@ public class Employee {
 
     Employee(String csvRow) {
         String[] fields = Arrays.stream(csvRow.split(",")).map(String::trim).toArray(String[]::new);
+        if(fields.length < 4) {
+            throw new IllegalArgumentException("Invalid CSV Row");
+        }
         this.id = fields[0];
         this.firstName = fields[1];
         this.lastName = fields[2];

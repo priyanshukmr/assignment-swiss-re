@@ -55,4 +55,9 @@ public class EmployeeGraphTest {
         Assertions.assertEquals(0, longReportingEmployees.size());
     }
 
+    @Test
+    public void testInvalidCSV() throws IOException {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new EmployeeGraph(Path.of("src/main/resources/invalid.csv")));
+    }
+
 }
