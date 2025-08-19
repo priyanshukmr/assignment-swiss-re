@@ -36,7 +36,7 @@ public class EmployeeGraphTest {
 
     @Test
     public void testEmployeesWithLongReportingChain() {
-        List<Metric<Double>> longReportingEmployees = employeeGraph.getEmployeesEarningMore();
+        List<Metric<Integer>> longReportingEmployees = employeeGraph.getEmployeesWithLongReporting();
         Assertions.assertNotNull(longReportingEmployees);
         Assertions.assertEquals(0, longReportingEmployees.size());
     }

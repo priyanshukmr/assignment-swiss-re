@@ -18,31 +18,37 @@ public class EmployeeGraph {
     private final List<Metric<Double>> lessEarningEmployees;
     private final List<Metric<Double>> moreEarningEmployees;
     private final List<Metric<Integer>> longReportingEmployees;
+    private Employee ceo;
+
+    private void buildGraphFromCSV(Path path) throws IOException {
+        List<String> rows = Files.readAllLines(path);
+        for(int i = 1; i<rows.size(); i++) {
+            String row = rows.get(i);
+            Employee employee = new Employee(row);
+            if(employee.getManagerId()==null) {
+                ceo = employee;
+                continue;
+            }
+            this.addSubordinate(employee.getManagerId(), employee);
+        }
+    }
 
     public EmployeeGraph(Path path) throws IOException {
         graph = new HashMap<>();
         lessEarningEmployees = new ArrayList<>();
         moreEarningEmployees = new ArrayList<>();
         longReportingEmployees = new ArrayList<>();
-        List<String> rows = Files.readAllLines(path);
-        Employee CEO = null;
-        for(int i = 1; i<rows.size(); i++) {
-            String row = rows.get(i);
-            Employee employee = new Employee(row);
-            if(employee.getManagerId()==null) {
-                CEO = employee;
-            }
-            else {
-                this.addSubordinate(employee.getManagerId(), employee);
-            }
-        }
-        if(CEO!=null) {
-            preprocessDfs(CEO, 1);
+        buildGraphFromCSV(path);
+        if(ceo!=null) {
+            preprocessDfs(ceo, 1);
         }
     }
 
     private void preprocessDfs(Employee employee, int depth) {
-        if(graph.get(employee.getId())==null) { // skip for employees with no subordinates
+        if(depth > MAX_MIDDLE_MANAGERS+2) {
+            longReportingEmployees.add(new Metric<>(employee.getId(), depth-5));
+        }
+        if(graph.get(employee.getId())==null) { // skip other metrics for employees with no subordinates
             return;
         }
         Double avgSubordinatesSalary = 0.0;
@@ -53,13 +59,12 @@ public class EmployeeGraph {
         avgSubordinatesSalary = avgSubordinatesSalary/graph.get(employee.getId()).size();
 
         if(employee.getSalary() < MIN_SALARY_MULTIPLIER*avgSubordinatesSalary) {
-            lessEarningEmployees.add(new Metric<>(employee.getId(), avgSubordinatesSalary));
+            Double deficitSalary = MIN_SALARY_MULTIPLIER*avgSubordinatesSalary - employee.getSalary();
+            lessEarningEmployees.add(new Metric<>(employee.getId(), deficitSalary));
         }
         else if(employee.getSalary() > MAX_SALARY_MULTIPLIER*avgSubordinatesSalary) {
-            moreEarningEmployees.add(new Metric<>(employee.getId(), avgSubordinatesSalary));
-        }
-        if(depth > MAX_MIDDLE_MANAGERS+2) {
-            longReportingEmployees.add(new Metric<>(employee.getId(), depth-5));
+            Double excessSalary = employee.getSalary() - MAX_SALARY_MULTIPLIER*avgSubordinatesSalary;
+            moreEarningEmployees.add(new Metric<>(employee.getId(), excessSalary));
         }
     }
 
